@@ -6,9 +6,21 @@ from discord.ext import commands
 from storage import read, write, push, edit, delete, clear, id, signup, ownerof
 from help import helpmessage, helpmessage_fmt
 from catlist import cats
+import time
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
+
+def _timestamp(m2, m3):
+    try:
+        timestr = m2 + ' ' + m3 + ':00'
+        print(timestr)
+        timestamp = time.mktime(time.strptime(timestr, "%d.%m.%Y %H:%M:%S"))
+        print("timestamp: ", timestamp)
+        return timestamp
+    except Exception as timeError:
+        print(timeError)
+        return False
 
 # FUN
 @bot.command(
@@ -62,13 +74,19 @@ async def on_message(message):
             'time': m[3],
             'participating': [user]
         }
-        # print RAW proposal
+        if _timestamp(m[2], m[3]) == False:
+            await message.channel.send(
+            '''
+            Invalid Format: Make sure the date and time is formatted according to this pattern: d.m.Y h:m \n example: 12.02.2012 16:30
+            '''
+            )
+            return
+        # add proposal to db
+        write(push(read(), proposal))
         await message.channel.send(
         '''
         Your Gaming Session was added to the list.\nWait for friends to join and use !view to list all sessions.
         ''')
-        # add proposal to db
-        write(push(read(), proposal))
 
     # VIEW
     elif msg.startswith('!view'):
@@ -128,8 +146,9 @@ async def on_message(message):
             await message.channel.send("Successfully deleted session #" + m[1])
         else:
             await message.channel.send("Failed to delete session #" + m[1])
-    elif msg.startswith('!me'):
 
+    # ME
+    elif msg.startswith('!me'):
         res = f'{user} is participating in these sessions: \n'
         data = read()
         for p in data:
@@ -140,6 +159,20 @@ async def on_message(message):
             return
         await message.channel.send(res);
 
+    elif msg.startswith('!autoclean'):
+        cnt = 0
+        data = read()
+        now = time.time()
+        day = 86400
+        for d in data:
+            if _timestamp(d['date'], d['time']) + day <= now:
+                data.remove(d)
+                cnt += 1
+        write(data)
+        await message.channel.send("Deleted " + str(cnt) + " old sessions.")
+
+
+    # HELP
     elif msg.startswith('!help'):
         await message.channel.send(helpmessage_fmt)
 bot.run(token)

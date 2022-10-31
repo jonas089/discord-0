@@ -35,12 +35,13 @@ def edit(id, override):
 def delete(id):
     data = read()
     try:
-        data.remove(data[id])
+        for d in data:
+            if d['id'] == id:
+                data.remove(d)
         write(data)
         return True
-    except Exception as fourOfour:
+    except Exception as error:
         return False
-
 def signup(id, user):
     data = read()
     if user in data[id]['participating']:
@@ -55,7 +56,10 @@ def signup(id, user):
 def ownerof(id):
     try:
         data = read()
-        return data[id]['creator']
+        for d in data:
+            if d['id'] == id:
+                return d['creator']
+        return False
     except Exception as error:
         return False
 def clear():
