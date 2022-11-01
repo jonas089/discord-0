@@ -11,7 +11,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-@bot.command()
+@bot.command(
+    help='Create a new event.'
+)
 async def create(ctx, game, date, time):
     owner = ctx.message.author.mention
     _event = Event(next(), owner, game, date, time)
@@ -23,17 +25,35 @@ async def create(ctx, game, date, time):
     db.store(_export_event)
     incr()
     await ctx.send('[Success]: Event added.')
-@bot.command()
+@bot.command(
+    help='Show all events.'
+)
 async def view(ctx):
     db = Database(path)
     _d = _format(db.read())
-    await ctx.send('>>> {}'.format(_d))
-@bot.command()
+    __d = '>>> {}'.format(_d)
+    BotAvatar = ctx.message.author.avatar
+    embed = discord.Embed(
+        title='Upcoming Events on this Server:',
+        description=__d,
+        color=discord.Colour.red())
+    embed.set_thumbnail(url=f'{BotAvatar}')
+    await ctx.send(embed=embed)
+@bot.command(
+    help='Edit "game" field of an event.'
+)
 async def edit_game(ctx, id, game):
     user = ctx.message.author.mention
     db = Database(path)
-    _event = db.read()
-    _Event = (
+    _events = db.read()
+    _event = None
+    for e in _events:
+        if str(e['id']) == str(id):
+            _event = e
+    if _event == None:
+        return
+    print("[Info]: Selected event for Edit: ", _event)
+    _Event = Event(
         _event['id'],
         _event['owner'],
         _event['game'],
@@ -43,12 +63,20 @@ async def edit_game(ctx, id, game):
     _Event.edit_game(game)
     db.remove_id(user, _event['id'])
     db.store(_Event.export())
-@bot.command()
+@bot.command(
+    help='Edit "date" field of an event.'
+)
 async def edit_date(ctx, id, date):
     user = ctx.message.author.mention
     db = Database(path)
-    _event = db.read()
-    _Event = (
+    _events = db.read()
+    _event = None
+    for e in _events:
+        if e['id'] == id:
+            _event = e
+    if _event == None:
+        return
+    _Event = Event(
         _event['id'],
         _event['owner'],
         _event['game'],
@@ -58,12 +86,20 @@ async def edit_date(ctx, id, date):
     _Event.edit_date(date)
     db.remove_id(user, _event['id'])
     db.store(_Event.export())
-@bot.command()
+@bot.command(
+    help='Edit "time" field of an event.'
+)
 async def edit_time(ctx, id, date):
     user = ctx.message.author.mention
     db = Database(path)
-    _event = db.read()
-    _Event = (
+    _events = db.read()
+    _event = None
+    for e in _events:
+        if e['id'] == id:
+            _event = e
+    if _event == None:
+        return
+    _Event = Event(
         _event['id'],
         _event['owner'],
         _event['game'],
@@ -73,7 +109,9 @@ async def edit_time(ctx, id, date):
     _Event.edit_time(time)
     db.remove_id(user, _event['id'])
     db.store(_Event.export())
-@bot.command()
+@bot.command(
+    help='Delete an event.'
+)
 async def delete(ctx, id):
     user = ctx.message.author.mention
     db = Database(path)
