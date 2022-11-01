@@ -54,14 +54,19 @@ class Database:
             with open(self.path, 'rb') as db:
                 data = pickle.load(db)
                 for d in data:
-                    if d['id'] == id and d['owner'] == user:
+                    if (str(d['id']) == id) and (d['owner'] == user):
+                        print(d['id'], id)
                         data.remove(d)
                         break
+                    else:
+                        print(d['id'], id, d['owner'], user)
                     return False
                 # Failed because not owner.
             with open(self.path, 'wb') as db:
                 pickle.dump(data, db)
+                return True
         except Exception as error:
+            print('[Error]: Remove ID', error)
             # Failed because db empty.
             return False
     def kill(self):

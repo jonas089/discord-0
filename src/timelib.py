@@ -4,7 +4,10 @@ import time
 def timestamp(date, _time):
     datetime = '{} {}'.format(date, _time)
     try:
-        return time.mktime(time.strptime(datetime, "%d.%m.%Y %H:%M"))
+        _t = time.mktime(time.strptime(datetime, "%d.%m.%Y %H:%M"))
+        if time.time() >= _t:
+            return None
+        return _t
     except Exception as invalid:
         print("[Error]: Timestamp invalid: ", invalid)
         return None
