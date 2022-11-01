@@ -7,6 +7,7 @@ from storage import read, write, push, edit, delete, clear, id, signup, ownerof
 from help import helpmessage, helpmessage_fmt
 from catlist import cats
 import time
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -22,14 +23,13 @@ def _timestamp(m2, m3):
         print(timeError)
         return False
 
-# FUN
-@bot.command(
-    help='Renders a cute cat image to the channel.',
-    brief='Get cute cat'
-)
-async def cat(ctx):
-    index = random.randint(0, len(cats) - 1)
-    await ctx.send(cats[index])
+# member: discord.Member
+# member.joined_at
+# ctx.message.author.mention
+# ctx.message.author.id
+@bot.command()
+async def context(ctx):
+    await ctx.send(ctx.message.author)
 
 # Gaming-Sessions
 @bot.command(
@@ -41,6 +41,8 @@ async def on_message(message):
     await bot.process_commands(message)
     user = str(message.author).split("#")[0]
     channel = str(message.channel.name)
+    if channel != 'gaming-calendar' and channel != 'dev-test':
+        return
     msg = str(message.content)
     print(f'Message {msg} by {user} on {channel}')
     # commands must have prefix.
@@ -95,7 +97,7 @@ async def on_message(message):
         for p in data:
             print(p)
             print(p['id'])
-            res += ':id: ' + str(p['id']) + '\n' + 'creator: ' + p['creator'] + '\n' + 'game: ' + p['game'] + '\n' + 'date: ' + p['date'] + '\n' + 'time: ' + p['time'] + '\n' + 'participating: ' + str(p['participating']) + '\n' + '-'*5 + '\n'
+            res += '```' + 'ID: ' + str(p['id']) + '\n' + 'creator: ' + p['creator'] + '\n' + 'game: ' + p['game'] + '\n' + 'date: ' + p['date'] + '\n' + 'time: ' + p['time'] + '\n' + 'participants: ' + str(len(p['participating'])) + '\n' + '-'*5 + '\n' + '```'
         if len(res) == 0:
             await message.channel.send("no outstanding gaming sessions.")
             return
@@ -153,19 +155,19 @@ async def on_message(message):
         data = read()
         for p in data:
             if user in p['participating']:
-                res += ':id: ' + str(p['id']) + '\n' + 'creator: ' + p['creator'] + '\n' + 'game: ' + p['game'] + '\n' + 'date: ' + p['date'] + '\n' + 'time: ' + p['time'] + '\n' + 'participating: ' + str(p['participating']) + '\n' + '-'*5 + '\n'
+                res += '>>>{}'.format('ID: ' + str(p['id']) + '\n' + 'creator: ' + p['creator'] + '\n' + 'Game: ' + p['game'] + '\n' + 'Date: ' + p['date'] + '\n' + 'Time: ' + p['time'] + '\n' + 'participants: ' + str(len(p['participating'])) + '\n')
         if len(res) == 0:
             await message.channel.send("You are not participating in any sessions.")
             return
-        await message.channel.send(res);
+        res_fmt = res
+        await message.channel.send(res_fmt);
 
     elif msg.startswith('!autoclean'):
         cnt = 0
         data = read()
         now = time.time()
-        day = 86400
         for d in data:
-            if _timestamp(d['date'], d['time']) + day <= now:
+            if _timestamp(d['date'], d['time']) <= now:
                 data.remove(d)
                 cnt += 1
         write(data)
