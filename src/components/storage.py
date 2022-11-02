@@ -1,5 +1,6 @@
 import os
 import pickle
+from event import Event
 class ID:
     def __init__(self, path, start):
         self.current = start
@@ -54,7 +55,7 @@ class Database:
             with open(self.path, 'rb') as db:
                 data = pickle.load(db)
                 for d in data:
-                    if (str(d['id']) == id) and (d['owner'] == user):
+                    if (str(d['id']) == str(id)) and (d['owner'] == user):
                         print(d['id'], id)
                         data.remove(d)
                         break
@@ -66,9 +67,16 @@ class Database:
                 pickle.dump(data, db)
                 return True
         except Exception as error:
-            print('[Error]: Remove ID', error)
             # Failed because db empty.
             return False
+    def override(self, _event):
+        data = self.read()
+        for i in range(0, len(data)):
+            if str(data[i]['id']) == str(_event['id']):
+                data[i] = _event
+        with open(self.path, 'wb')as db:
+            pickle.dump(data, db)
+        print("[Info]: Override successful.")
     def kill(self):
         os.remove(self.path)
     def size(self):

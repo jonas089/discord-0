@@ -31,7 +31,7 @@ async def create(ctx, game, date, time):
 async def view(ctx):
     db = Database(path)
     _d = _format(db.read())
-    __d = '>>> {}'.format(_d)
+    __d = '{}'.format(_d)
     BotAvatar = ctx.message.author.avatar
     embed = discord.Embed(
         title='Upcoming Events on this Server:',
@@ -119,4 +119,27 @@ async def delete(ctx, id):
         await ctx.send('>>> {}'.format('[Success]: Event deleted.'))
         return
     await ctx.send('[Error]: Failed to delete event.')
+@bot.command(
+    help='Join a new event.'
+)
+async def join(ctx, id):
+    user = ctx.message.author.mention
+    db = Database(path)
+    data = db.read()
+    _event = None
+    for d in data:
+        if str(d['id']) == str(id):
+            _event = d
+    if _event == None:
+        return
+    _Event = Event(
+        _event['id'],
+        _event['owner'],
+        _event['game'],
+        _event['date'],
+        _event['time']
+        )
+    _Event.join(user)
+    db.override(_Event.export())
+
 bot.run(token)

@@ -8,7 +8,7 @@ from event import Event
 from storage import Database, ID
 
 def _test_event():
-    _event = Event(0, 'jonas', 'GTA', '01.01.2000', '16:30')
+    _event = Event(0, 'jonas', 'GTA', '01.01.2025', '16:30')
     return _event
 
 def _test_write_single():
