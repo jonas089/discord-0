@@ -52,10 +52,13 @@ class Database:
         try:
             with open(self.path, 'rb') as db:
                 data = pickle.load(db)
+                _exists = False
                 for d in data:
                     if (str(d['id']) == str(id)) and (d['owner'] == user):
+                        _exists = True
                         data.remove(d)
                         break
+                if _exists == False:
                     return False
                 # Failed because not owner.
             with open(self.path, 'wb') as db:
