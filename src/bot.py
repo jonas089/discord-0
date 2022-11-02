@@ -16,7 +16,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 )
 async def create(ctx, game, date, time):
     owner = ctx.message.author.mention
-    _event = Event(next(), owner, game, date, time)
+    _event = Event(next(), owner, game, date, time, [])
     _export_event = _event.export()
     if _export_event == None:
         await ctx.send('[Error]: Invalid date or time.')
@@ -24,7 +24,7 @@ async def create(ctx, game, date, time):
     db = Database(path)
     db.store(_export_event)
     incr()
-    await ctx.send('[Success]: Event added.')
+    await ctx.send('*Success*: Event created by' + owner)
 @bot.command(
     help='Show all events.'
 )
@@ -32,12 +32,12 @@ async def view(ctx):
     db = Database(path)
     _d = _format(db.read())
     __d = '{}'.format(_d)
-    BotAvatar = ctx.message.author.avatar
+    AuthorAvatar = ctx.message.author.avatar
     embed = discord.Embed(
-        title='Upcoming Events on this Server:',
+        title='Server Calendar:',
         description=__d,
         color=discord.Colour.red())
-    embed.set_thumbnail(url=f'{BotAvatar}')
+    embed.set_thumbnail(url=f'{AuthorAvatar}')
     await ctx.send(embed=embed)
 @bot.command(
     help='Edit "game" field of an event.'
@@ -52,16 +52,20 @@ async def edit_game(ctx, id, game):
             _event = e
     if _event == None:
         return
-    print("[Info]: Selected event for Edit: ", _event)
     _Event = Event(
         _event['id'],
         _event['owner'],
         _event['game'],
         _event['date'],
-        _event['time']
+        _event['time'],
+        _event['participants']
         )
     _Event.edit_game(game)
-    db.remove_id(user, _event['id'])
+    res = db.remove_id(user, _event['id'])
+    if res == True:
+        await ctx.send('*Success: * ' + user + ' edited Event #' + '**' + id + '**')
+    else:
+        await ctx.send('*Failed: * Event remains unchanged.')
     db.store(_Event.export())
 @bot.command(
     help='Edit "date" field of an event.'
@@ -72,7 +76,7 @@ async def edit_date(ctx, id, date):
     _events = db.read()
     _event = None
     for e in _events:
-        if e['id'] == id:
+        if str(e['id']) == str(id):
             _event = e
     if _event == None:
         return
@@ -81,10 +85,16 @@ async def edit_date(ctx, id, date):
         _event['owner'],
         _event['game'],
         _event['date'],
-        _event['time']
+        _event['time'],
+        _event['participants']
         )
     _Event.edit_date(date)
-    db.remove_id(user, _event['id'])
+    res = db.remove_id(user, _event['id'])
+    print(res)
+    if res == True:
+        await ctx.send('*Success: * ' + user + ' edited Event #' + '**' + id + '**')
+    else:
+        await ctx.send('*Failed: * Event remains unchanged.')
     db.store(_Event.export())
 @bot.command(
     help='Edit "time" field of an event.'
@@ -95,7 +105,7 @@ async def edit_time(ctx, id, date):
     _events = db.read()
     _event = None
     for e in _events:
-        if e['id'] == id:
+        if str(e['id']) == str(id):
             _event = e
     if _event == None:
         return
@@ -104,11 +114,16 @@ async def edit_time(ctx, id, date):
         _event['owner'],
         _event['game'],
         _event['date'],
-        _event['time']
+        _event['time'],
+        _event['participants']
         )
     _Event.edit_time(time)
-    db.remove_id(user, _event['id'])
+    res = db.remove_id(user, _event['id'])
     db.store(_Event.export())
+    if res == True:
+        await ctx.send('*Success: * ' + user + ' edited Event #' + '**' + id + '**')
+    else:
+        await ctx.send('*Failed: * Event remains unchanged.')
 @bot.command(
     help='Delete an event.'
 )
@@ -119,6 +134,25 @@ async def delete(ctx, id):
         await ctx.send('>>> {}'.format('[Success]: Event deleted.'))
         return
     await ctx.send('[Error]: Failed to delete event.')
+@bot.command(
+    help='View your events.'
+)
+async def me(ctx):
+    user = ctx.message.author.mention
+    db = Database(path)
+    data = db.read()
+    list = []
+    for d in data:
+        if user in d['participants']:
+            list.append(d)
+    _d = '{}'.format(_format(list))
+    AuthorAvatar = ctx.message.author.avatar
+    embed = discord.Embed(
+        title='Your personal Calendar:',
+        description= _d,
+        color=discord.Colour.red())
+    embed.set_thumbnail(url=f'{AuthorAvatar}')
+    await ctx.send(embed=embed)
 @bot.command(
     help='Join a new event.'
 )
@@ -137,9 +171,16 @@ async def join(ctx, id):
         _event['owner'],
         _event['game'],
         _event['date'],
-        _event['time']
+        _event['time'],
+        _event['participants']
         )
+    if user in _event['participants']:
+        msg = '*Warning: *' + user + ' is already a participant in Event #**' + id + '**'
+        await ctx.send(msg)
+        return
     _Event.join(user)
-    db.override(_Event.export())
+    if db.override(_Event.export()) == True:
+        msg = '*Success: * ' + user + ' joined Event #' + '**' + id + '**'
+        await ctx.send(msg)
 
 bot.run(token)

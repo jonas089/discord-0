@@ -35,12 +35,10 @@ class Database:
         try:
             with open(self.path, 'rb') as db:
                 data = pickle.load(db)
-                print("[Info]: Data loaded: ", data)
             with open(self.path, 'wb') as db:
                 data.append(object)
                 pickle.dump(data, db)
         except Exception as empty:
-            print("[Warning]: ", empty)
             with open(self.path, 'wb') as db:
                 pickle.dump([object], db)
     def read(self):
@@ -56,11 +54,8 @@ class Database:
                 data = pickle.load(db)
                 for d in data:
                     if (str(d['id']) == str(id)) and (d['owner'] == user):
-                        print(d['id'], id)
                         data.remove(d)
                         break
-                    else:
-                        print(d['id'], id, d['owner'], user)
                     return False
                 # Failed because not owner.
             with open(self.path, 'wb') as db:
@@ -76,8 +71,12 @@ class Database:
                 data[i] = _event
         with open(self.path, 'wb')as db:
             pickle.dump(data, db)
-        print("[Info]: Override successful.")
+        return True
     def kill(self):
-        os.remove(self.path)
+        try:
+            os.remove(self.path)
+            return True
+        except Exception as error:
+            return False
     def size(self):
         return len(self.read())

@@ -1,12 +1,12 @@
 from timelib import timestamp
 class Event:
-    def __init__(self, id, owner, game, date, time):
+    def __init__(self, id, owner, game, date, time, participants):
         self.id = id
         self.owner = owner
         self.game = game
         self.date = date
         self.time = time
-        self.participants = []
+        self.participants = participants
         self._timestamp = timestamp(date, time)
     def export(self):
         # invalid event if timestamp == None
@@ -19,7 +19,7 @@ class Event:
             'game':self.game,
             'date':self.date,
             'time':self.time,
-            'participants':str(len(self.participants))
+            'participants':self.participants
         }
     def join(self, user):
         self.participants.append(user)
